@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Random Trade Inequality</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f8f2e8;
+      --surface: #fff9f2;
+      --ink: #1b1b1b;
+      --muted: #6b655d;
+      --accent: #e08f3e;
+      --accent-deep: #b7611b;
+      --plot-bg: #fdf6ee;
+      --grid: #e6d9c8;
+      --shadow: 0 20px 40px rgba(71, 43, 12, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at top left, #fff4e2 0%, #f6e9d8 42%, #f1e3d1 100%);
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    header {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-family: "Fraunces", serif;
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      margin: 0;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 720px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    button {
+      font-family: "Space Grotesk", sans-serif;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-weight: 600;
+      background: linear-gradient(120deg, var(--accent), var(--accent-deep));
+      color: #fffaf3;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px) scale(1.01);
+      box-shadow: 0 24px 48px rgba(71, 43, 12, 0.18);
+    }
+
+    .stat {
+      background: var(--surface);
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid #f0e2d3;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .speed {
+      display: grid;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 18px;
+      border: 1px solid #f0e2d3;
+      background: var(--surface);
+      min-width: 160px;
+    }
+
+    .speed input {
+      accent-color: var(--accent-deep);
+    }
+
+    .plots {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .faq {
+      margin-top: 28px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .faq h2 {
+      font-family: "Fraunces", serif;
+      font-size: 1.35rem;
+      margin: 0;
+    }
+
+    .faq details {
+      background: var(--surface);
+      border-radius: 18px;
+      border: 1px solid #f0e2d3;
+      box-shadow: 0 16px 32px rgba(71, 43, 12, 0.1);
+      padding: 6px 16px;
+    }
+
+    .faq summary {
+      cursor: pointer;
+      font-weight: 600;
+      list-style: none;
+      padding: 10px 26px 10px 0;
+      position: relative;
+    }
+
+    .faq summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq summary::after {
+      content: "+";
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent-deep);
+      font-size: 1.1rem;
+    }
+
+    .faq details[open] summary::after {
+      content: "-";
+    }
+
+    .faq p {
+      margin: 0 0 12px;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--surface);
+      padding: 18px;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid #f3e5d7;
+      display: grid;
+      gap: 12px;
+    }
+
+    .card h2 {
+      font-family: "Fraunces", serif;
+      font-size: 1.4rem;
+      margin: 0;
+    }
+
+    .plot-wrap {
+      position: relative;
+      padding: 18px 18px 36px 44px;
+      background: var(--plot-bg);
+      border-radius: 18px;
+      border: 1px solid #f0e2d3;
+    }
+
+    .axis-label {
+      position: absolute;
+      font-size: 0.82rem;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+
+    .axis-label.x {
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .axis-label.y {
+      top: 50%;
+      left: 12px;
+      transform: translateY(-50%) rotate(-90deg);
+      transform-origin: left center;
+    }
+
+    .axis-ticks {
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      right: 0;
+      height: 18px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .axis-ticks span {
+      position: absolute;
+      bottom: 0;
+      transform: translateX(0);
+    }
+
+    .axis-ticks span::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: -8px;
+      width: 1px;
+      height: 6px;
+      background: var(--grid);
+    }
+
+    .axis-ticks span[data-edge="end"] {
+      transform: translateX(-100%);
+    }
+
+    canvas {
+      width: 100%;
+      height: 300px;
+      background: transparent;
+      border-radius: 14px;
+    }
+
+    @media (max-width: 640px) {
+      .controls {
+        align-items: stretch;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .stat {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Random Trade, Uneven Outcomes</h1>
+      <div class="controls">
+        <button id="step">Step</button>
+        <button id="stepTen">Step x10</button>
+        <button id="toggleRun">Play</button>
+        <button id="reset">Reset</button>
+        <label class="speed">
+          <span>Speed</span>
+          <input id="speed" type="range" min="0" max="1198" step="10" value="1198" />
+        </label>
+        <div class="stat" id="stepCount">Step: 0</div>
+        <div class="stat" id="maxWealth">Max currency: 20</div>
+        <div class="stat" id="minWealth">Min currency: 20</div>
+      </div>
+    </header>
+
+    <section class="plots">
+      <div class="card">
+        <h2>Wealth per Agent (Microstate)</h2>
+        <div class="plot-wrap">
+          <canvas id="micro"></canvas>
+          <div class="axis-label x">Agent index</div>
+          <div class="axis-label y">Currency</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Currency Histogram (Macrostate)</h2>
+        <div class="plot-wrap">
+          <canvas id="macro"></canvas>
+          <div class="axis-label x">Currency level</div>
+          <div class="axis-label y">Number of agents</div>
+          <div class="axis-ticks" id="histTicks">
+            <span data-value="0">0</span>
+            <span data-value="20">20</span>
+            <span data-value="40">40</span>
+            <span data-value="60">60</span>
+            <span data-value="80">80</span>
+            <span data-value="100" data-edge="end">100</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq">
+      <h2>FAQ</h2>
+      <details open>
+        <summary>What am I looking at?</summary>
+        <p>
+          Each step shows one <strong>microstate</strong>: who holds how much currency right now.
+          The histogram shows the <strong>macrostate</strong>: how many agents sit at each currency
+          level. Total currency is conserved, but random trades push the macrostate toward a
+          stable, unequal shape while the microstate keeps reshuffling.
+        </p>
+      </details>
+      <details>
+        <summary>Why can many microstates share one macrostate?</summary>
+        <p>
+          A microstate is the full agent-by-agent snapshot. A macrostate ignores identities and
+          keeps only coarse counts, like the histogram. Many different assignments of money to
+          specific agents can produce the exact same histogram.
+        </p>
+      </details>
+      <details>
+        <summary>Why does the distribution become exponential?</summary>
+        <p>
+          This mirrors molecules exchanging energy. With fixed total currency and random exchange,
+          the most probable macrostate maximizes entropy, which yields an exponential distribution
+          P(m) ~ e^(-m/T), where T is the average currency per agent. Everyone starts equal
+          (20 currency, 100,000 goods), yet macro inequality appears even as the identity of the
+          "rich" agents keeps changing.
+        </p>
+      </details>
+    </section>
+  </div>
+
+  <script>
+    const agentCount = 100;
+    const startCurrency = 20;
+    const startGoods = 100000;
+
+    const agents = Array.from({ length: agentCount }, () => ({
+      currency: startCurrency,
+      goods: startGoods
+    }));
+
+    const resetAgents = () => {
+      agents.forEach((agent) => {
+        agent.currency = startCurrency;
+        agent.goods = startGoods;
+      });
+      steps = 0;
+      render();
+    };
+
+    const stepButton = document.getElementById("step");
+    const stepTenButton = document.getElementById("stepTen");
+    const toggleRunButton = document.getElementById("toggleRun");
+    const resetButton = document.getElementById("reset");
+    const speedSlider = document.getElementById("speed");
+    const stepCountEl = document.getElementById("stepCount");
+    const maxWealthEl = document.getElementById("maxWealth");
+    const minWealthEl = document.getElementById("minWealth");
+    const microCanvas = document.getElementById("micro");
+    const macroCanvas = document.getElementById("macro");
+
+    let steps = 0;
+    let isRunning = false;
+    let runTimer = null;
+    const speedMin = 4;
+    const speedMax = 1200;
+    const mapSpeed = (value) => speedMax - value;
+    let runInterval = mapSpeed(Number(speedSlider.value)) + speedMin;
+
+    const resizeCanvas = (canvas) => {
+      const ratio = window.devicePixelRatio || 1;
+      const width = canvas.clientWidth * ratio;
+      const height = canvas.clientHeight * ratio;
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      return ratio;
+    };
+
+    const drawGrid = (ctx, width, height) => {
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--grid");
+      ctx.lineWidth = 1;
+      const lines = 4;
+      for (let i = 1; i <= lines; i += 1) {
+        const y = (height / (lines + 1)) * i;
+        ctx.beginPath();
+        ctx.moveTo(12, y);
+        ctx.lineTo(width - 12, y);
+        ctx.stroke();
+      }
+    };
+
+    const drawBars = (canvas, values, options) => {
+      const ratio = resizeCanvas(canvas);
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+
+      ctx.clearRect(0, 0, width, height);
+      drawGrid(ctx, width, height);
+
+      const maxValue = options.maxValue ?? Math.max(...values, 1);
+      const padding = 24 * ratio;
+      const innerWidth = width - padding * 2;
+      const innerHeight = height - padding * 2;
+      const barGap = options.gap * ratio;
+      const barWidth = (innerWidth - barGap * (values.length - 1)) / values.length;
+
+      if (options.baseline !== undefined) {
+        const baselineY = height - padding - (options.baseline / maxValue) * innerHeight;
+        ctx.save();
+        ctx.strokeStyle = options.baselineColor || "#b38d61";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6 * ratio, 6 * ratio]);
+        ctx.beginPath();
+        ctx.moveTo(padding, baselineY);
+        ctx.lineTo(width - padding, baselineY);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      values.forEach((value, index) => {
+        const barHeight = (value / maxValue) * innerHeight;
+        const x = padding + index * (barWidth + barGap);
+        const y = height - padding - barHeight;
+        const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+        gradient.addColorStop(0, options.colorTop);
+        gradient.addColorStop(1, options.colorBottom);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y, barWidth, barHeight);
+      });
+    };
+
+    const histogramBinSize = 5;
+    const histogramBinCount = 20;
+
+    const histogramGap = 2;
+
+    const getHistogramCssGeometry = () => {
+      const padding = 24;
+      const gap = histogramGap;
+      const width = macroCanvas.clientWidth;
+      const innerWidth = Math.max(width - padding * 2, 0);
+      const barWidth = (innerWidth - gap * (histogramBinCount - 1)) / histogramBinCount;
+      const canvasOffset = macroCanvas.offsetLeft;
+      return {
+        padding,
+        gap,
+        barWidth,
+        innerWidth,
+        canvasOffset
+      };
+    };
+
+    const getHistogramCanvasGeometry = (canvas) => {
+      const ratio = window.devicePixelRatio || 1;
+      const padding = 24 * ratio;
+      const gap = histogramGap * ratio;
+      const width = canvas.width;
+      const height = canvas.height;
+      const innerWidth = Math.max(width - padding * 2, 0);
+      const barWidth = (innerWidth - gap * (histogramBinCount - 1)) / histogramBinCount;
+      return {
+        ratio,
+        padding,
+        gap,
+        width,
+        height,
+        innerWidth,
+        barWidth
+      };
+    };
+
+    const drawHistogram = (canvas, values) => {
+      const bins = Array.from({ length: histogramBinCount }, () => 0);
+      values.forEach((value) => {
+        const binIndex = Math.floor(value / histogramBinSize);
+        if (binIndex >= 0 && binIndex < histogramBinCount) {
+          bins[binIndex] += 1;
+        }
+      });
+      drawBars(canvas, bins, {
+        gap: histogramGap,
+        colorTop: "#f2b05f",
+        colorBottom: "#d2711f",
+        maxValue: agentCount
+      });
+      const ctx = canvas.getContext("2d");
+      const { ratio, padding, gap, height, innerWidth, barWidth } = getHistogramCanvasGeometry(canvas);
+      const maxValue = histogramBinCount * histogramBinSize;
+      if (startCurrency >= 0 && startCurrency <= maxValue) {
+        const x = padding + (startCurrency / histogramBinSize) * (barWidth + gap);
+        if (x >= padding && x <= padding + innerWidth) {
+          ctx.save();
+          ctx.strokeStyle = "#cc3b2e";
+          ctx.lineWidth = 2 * ratio;
+          ctx.setLineDash([4 * ratio, 4 * ratio]);
+          ctx.beginPath();
+          ctx.moveTo(x, padding);
+          ctx.lineTo(x, height - padding);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    };
+
+    const updateHistogramTicks = () => {
+      const tickWrap = document.getElementById("histTicks");
+      if (!tickWrap) {
+        return;
+      }
+      const { padding, gap, barWidth, innerWidth, canvasOffset } = getHistogramCssGeometry();
+      const tickEls = tickWrap.querySelectorAll("span[data-value]");
+      tickEls.forEach((tick) => {
+        const value = Number(tick.dataset.value);
+        if (!Number.isFinite(value)) {
+          return;
+        }
+        if (value >= histogramBinCount * histogramBinSize) {
+          tick.style.left = `${canvasOffset + padding + innerWidth}px`;
+          return;
+        }
+        const x = canvasOffset + padding + (value / histogramBinSize) * (barWidth + gap);
+        tick.style.left = `${x}px`;
+      });
+    };
+
+    const render = () => {
+      const currencies = agents.map((agent) => agent.currency);
+      const maxCurrency = Math.max(...currencies, startCurrency);
+      drawBars(microCanvas, currencies, {
+        gap: 2,
+        colorTop: "#f6c17b",
+        colorBottom: "#c96a1d",
+        maxValue: maxCurrency,
+        baseline: startCurrency,
+        baselineColor: "#c09a6a"
+      });
+      drawHistogram(macroCanvas, currencies);
+      updateHistogramTicks();
+
+      stepCountEl.textContent = `Step: ${steps}`;
+      maxWealthEl.textContent = `Max currency: ${Math.max(...currencies)}`;
+      minWealthEl.textContent = `Min currency: ${Math.min(...currencies)}`;
+    };
+
+      const attemptTrade = (buyer, seller) => {
+        if (buyer.currency > 0 && seller.goods > 0) {
+          buyer.currency -= 1;
+          buyer.goods += 1;
+          seller.currency += 1;
+          seller.goods -= 1;
+          return true;
+        }
+        return false;
+      };
+
+    const shuffleIndices = (count) => {
+      const indices = Array.from({ length: count }, (_, i) => i);
+      for (let i = indices.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      return indices;
+    };
+
+    const step = () => {
+      const order = shuffleIndices(agentCount);
+      for (let i = 0; i < order.length - 1; i += 2) {
+        const agentA = agents[order[i]];
+        const agentB = agents[order[i + 1]];
+        const tradeFirst = Math.random() < 0.5;
+        if (tradeFirst) {
+          if (!attemptTrade(agentA, agentB)) {
+            attemptTrade(agentB, agentA);
+          }
+        } else if (!attemptTrade(agentB, agentA)) {
+          attemptTrade(agentA, agentB);
+        }
+      }
+
+      steps += 1;
+      render();
+    };
+
+
+
+    const stepMultiple = (count) => {
+      for (let i = 0; i < count; i += 1) {
+        step();
+      }
+    };
+
+    const updateRunButton = () => {
+      toggleRunButton.textContent = isRunning ? "Pause" : "Play";
+    };
+
+    const startRun = () => {
+      if (isRunning) {
+        return;
+      }
+      isRunning = true;
+      updateRunButton();
+      runTimer = window.setInterval(step, runInterval);
+    };
+
+    const stopRun = () => {
+      if (!isRunning) {
+        return;
+      }
+      isRunning = false;
+      updateRunButton();
+      window.clearInterval(runTimer);
+      runTimer = null;
+    };
+
+    const restartRun = () => {
+      if (!isRunning) {
+        return;
+      }
+      window.clearInterval(runTimer);
+      runTimer = window.setInterval(step, runInterval);
+    };
+
+    stepButton.addEventListener("click", () => stepMultiple(1));
+    stepTenButton.addEventListener("click", () => stepMultiple(10));
+    toggleRunButton.addEventListener("click", () => {
+      if (isRunning) {
+        stopRun();
+      } else {
+        startRun();
+      }
+    });
+    resetButton.addEventListener("click", () => {
+      stopRun();
+      resetAgents();
+    });
+    speedSlider.addEventListener("input", (event) => {
+      runInterval = mapSpeed(Number(event.target.value)) + speedMin;
+      restartRun();
+    });
+    window.addEventListener("resize", render);
+
+    render();
+  </script>
+</body>
+</html>
